@@ -859,3 +859,48 @@
     font-size: 22px;
   }
 }
+
+/* ========== Voice Engine Settings ========== */
+.voice-mode-select {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.voice-mode-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.voice-mode-btn:hover {
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.voice-mode-btn.active {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+}
+
+.senseaudio-config {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: #f7f8ff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.senseaudio-config input {
+  font-size: 13px;
+}

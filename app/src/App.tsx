@@ -388,6 +388,46 @@ ${htmlContent}
                   不填也能用。系统内置智能解析引擎，可直接从讲义中提取结构并生成课件。
                 </p>
               </div>
+
+              <Separator className="full-width sep" />
+
+              {/* ====== VOICE ENGINE SETTINGS ====== */}
+              <div className="form-field full-width">
+                <Label><Volume2 size={14} /> 语音讲解引擎</Label>
+                <div className="voice-mode-select">
+                  <button
+                    type="button"
+                    className={`voice-mode-btn ${speech.mode === 'browser' ? 'active' : ''}`}
+                    onClick={() => speech.setMode('browser')}
+                  >
+                    浏览器语音（免费）
+                  </button>
+                  <button
+                    type="button"
+                    className={`voice-mode-btn ${speech.mode === 'senseaudio' ? 'active' : ''}`}
+                    onClick={() => speech.setMode('senseaudio')}
+                  >
+                    SenseAudio（我的声音）
+                  </button>
+                </div>
+                {speech.mode === 'senseaudio' && (
+                  <div className="senseaudio-config">
+                    <Input
+                      placeholder="SenseAudio API Proxy 地址，例如 https://your-project.vercel.app/api/tts"
+                      value={speech.apiEndpoint}
+                      onChange={(e) => speech.setApiEndpoint(e.target.value)}
+                    />
+                    <Input
+                      placeholder="音色 ID（可选，默认使用你的克隆音色）"
+                      value={speech.voiceId}
+                      onChange={(e) => speech.setVoiceId(e.target.value)}
+                    />
+                    <p className="field-hint">
+                      需要先在 Vercel 部署 TTS 代理服务。仓库：https://github.com/uongxzh/senseaudio-tts-proxy
+                    </p>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 
@@ -452,12 +492,22 @@ ${htmlContent}
                   variant="outline"
                   size="sm"
                   onClick={() => speech.toggle(courseware.fullScript)}
-                  disabled={!speech.isSupported}
+                  disabled={!speech.isSupported || speech.state === 'generating'}
                 >
-                  {speech.state === 'playing' ? <Pause size={16} /> : <Play size={16} />}
-                  {speech.state === 'playing' ? '暂停讲解' : '播放完整讲解'}
+                  {speech.state === 'generating' ? (
+                    <Loader2 size={16} className="spinner-icon" />
+                  ) : speech.state === 'playing' ? (
+                    <Pause size={16} />
+                  ) : (
+                    <Play size={16} />
+                  )}
+                  {speech.state === 'generating'
+                    ? '正在生成语音…'
+                    : speech.state === 'playing'
+                    ? '暂停讲解'
+                    : '播放完整讲解'}
                 </Button>
-                {speech.state !== 'idle' && (
+                {speech.state !== 'idle' && speech.state !== 'generating' && (
                   <Button variant="ghost" size="sm" onClick={speech.stop}>
                     <Square size={14} />
                   </Button>
