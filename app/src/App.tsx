@@ -10,9 +10,11 @@ import {
   BookOpen, Play, Pause, Square, Volume2, Download, ChevronLeft, ChevronRight,
   Sparkles, GraduationCap, Clock, Target, AlertCircle, Mic, FileText, Printer,
   PenLine, Type, BookText, Pencil, MonitorPlay,
+  Upload, FileUp, Image as ImageIcon, X, Loader2,
 } from 'lucide-react';
 import { useCourseware } from '@/hooks/useCourseware';
 import { useSpeech } from '@/hooks/useSpeech';
+import { useFileParser } from '@/hooks/useFileParser';
 import type { CourseInfo, AppView, Slide } from '@/types';
 import './App.css';
 
@@ -30,8 +32,56 @@ function App() {
 
   const { courseware, progress, error, generate, updateSlide } = useCourseware();
   const speech = useSpeech();
+  const fileParser = useFileParser();
   const previewRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const [extractedImages, setExtractedImages] = useState<string[]>([]);
+
+  const handleFile = async (file: File) => {
+    const result = await fileParser.parseFile(file);
+    if (result) {
+      setCourseInfo((prev) => ({
+        ...prev,
+        lectureContent: prev.lectureContent
+          ? prev.lectureContent + '\n\n' + result.text
+          : result.text,
+      }));
+      if (result.images.length > 0) {
+        setExtractedImages(result.images);
+      }
+    }
+  };
+
+  const onDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragOver(false);
+      const file = e.dataTransfer.files[0];
+      if (file) handleFile(file);
+    },
+    [fileParser]
+  );
+
+  const onDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  }, []);
+
+  const onDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+  }, []);
+
+  const onFileInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) handleFile(file);
+      e.target.value = '';
+    },
+    [fileParser]
+  );
 
   // Auto-extract topic from first heading in lecture content
   useEffect(() => {
@@ -195,6 +245,72 @@ ${htmlContent}
               </CardTitle>
             </CardHeader>
             <CardContent className="form-grid">
+              {/* ====== FILE UPLOAD ====== */}
+              <div className="form-field full-width">
+                <Label>
+                  <Upload size={14} />
+                  上传备课文件
+                </Label>
+                <div
+                  className={`upload-dropzone ${dragOver ? 'active' : ''}`}
+                  onDrop={onDrop}
+                  onDragOver={onDragOver}
+                  onDragLeave={onDragLeave}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".docx,.pdf,.md,.txt"
+                    className="upload-input"
+                    onChange={onFileInputChange}
+                  />
+                  {fileParser.parsing ? (
+                    <div className="upload-parsing">
+                      <Loader2 size={24} className="upload-spinner" />
+                      <span>正在解析文件，请稍候…</span>
+                    </div>
+                  ) : (
+                    <>
+                      <FileUp size={32} className="upload-icon" />
+                      <div className="upload-text">
+                        <strong>点击上传</strong> 或拖拽文件到此处
+                      </div>
+                      <div className="upload-hint">
+                        支持 Word (.docx) · PDF (.pdf) · Markdown (.md) · 文本 (.txt)
+                      </div>
+                    </>
+                  )}
+                </div>
+                {fileParser.parseError && (
+                  <p className="field-hint" style={{ color: '#c53030' }}>
+                    {fileParser.parseError}
+                  </p>
+                )}
+                {extractedImages.length > 0 && (
+                  <div className="upload-images">
+                    <div className="upload-images-header">
+                      <ImageIcon size={14} />
+                      从文件中提取到 {extractedImages.length} 张图片
+                      <button
+                        className="upload-images-clear"
+                        onClick={() => setExtractedImages([])}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                    <div className="upload-images-grid">
+                      {extractedImages.map((src, i) => (
+                        <img key={i} src={src} alt={`提取图片 ${i + 1}`} className="upload-thumb" />
+                      ))}
+                    </div>
+                    <p className="field-hint">图片已提取，可在生成课件后手动插入到对应页面</p>
+                  </div>
+                )}
+              </div>
+
+              <Separator className="full-width sep" />
+
               {/* ====== LECTURE CONTENT - HERO INPUT ====== */}
               <div className="form-field full-width lecture-field">
                 <Label>
